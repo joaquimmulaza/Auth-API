@@ -8,6 +8,29 @@ const JWTSecret = "fndkfnkdsnkfndsfndskfkldsfkldsfknfksfnsknndskfn"
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
+function auth(req, res, next) {
+    const authToken = req.headers['authorization'];
+
+    if(authToken != undefined) {
+        const bearer = authToken.split(' ');
+        var token = bearer[1]
+
+        jwt.verify(token, JWTSecret, (err, data) => {
+            if(err) {
+                res.status(401);
+                res.json({err: "Token invalido!"});
+            } else {
+                req.token = token;
+                req.loggedUser = {id: data.id, email: data.email};
+                next();
+            }
+        });
+    } else {
+        res.status(401);
+        res.json({err: "Token invalido!"});
+    }
+    next();
+}
 
 var DB = {
     games: [
@@ -36,7 +59,7 @@ var DB = {
             id: 1,
             name:"Joaquim Mulaza",
             email: "joaquimmulazadev@gmail.com",
-            password: "0000"
+            password: "bbbb"
         },
 
         {
@@ -48,12 +71,12 @@ var DB = {
     ]
 }
 
-app.get("/games",(req, res) => {
+app.get("/games", auth, (req, res) => {
     res.statusCode = 200;
     res.json(DB.games);
 });
 
-app.get("/game/:id",(req, res) => {
+app.get("/game/:id", auth, (req, res) => {
     if(isNaN(req.params.id)){
         res.sendStatus(400);
     }else{
@@ -71,7 +94,7 @@ app.get("/game/:id",(req, res) => {
     }
 });
 
-app.post("/game",(req, res) => { 
+app.post("/game", auth, (req, res) => { 
     var {title, price, year} = req.body;
     DB.games.push({
         id: 2323,
@@ -82,7 +105,7 @@ app.post("/game",(req, res) => {
     res.sendStatus(200);
 })
 
-app.delete("/game/:id",(req, res) => {
+app.delete("/game/:id", auth, (req, res) => {
     if(isNaN(req.params.id)){
         res.sendStatus(400);
     }else{
@@ -98,7 +121,7 @@ app.delete("/game/:id",(req, res) => {
     }
 });
 
-app.put("/game/:id",(req, res) => {
+app.put("/game/:id", auth, (req, res) => {
 
     if(isNaN(req.params.id)){
         res.sendStatus(400);
